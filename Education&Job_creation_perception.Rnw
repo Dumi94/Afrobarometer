@@ -1,0 +1,143 @@
+\documentclass{article}
+\author{Dumisani Yambira}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+<<echo=FALSE, include=FALSE>>==
+#libraries chunk
+library(haven)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(plotrix)
+@
+
+
+<<echo=FALSE, include=FALSE>>==
+#Pre-processing chunk
+#load the merged data on the chunk
+Afrodata <- read_sav("merged_r6_data_2016_36countries2.sav")
+str(Afrodata)
+
+#Extract countries from the Afrobarometer dataset
+table(Afrodata$COUNTRY)
+#attributes(Afrodata$COUNTRY)
+
+#convert to factor, the desired data-frame
+Afrodata.f <- as_factor(Afrodata$COUNTRY)
+
+#table(Afrodata.f)
+
+#Extract the desired countries from the dataset
+#Start with Uganda
+Uganda <- subset(Afrodata, COUNTRY == 34)
+
+#Extract Q97
+Uganda.Edu <- Uganda$Q97
+
+#Convert to factor
+Uganda.Edu.f <- as_factor(Uganda.Edu)
+table(Uganda.Edu.f)
+
+#Extract Q63B
+Uganda.Party <- Uganda$Q63B
+
+#Convert to factor
+Uganda.Party.f <- as_factor(Uganda.Party)
+table(Uganda.Party.f)
+
+# Next Task, extract data from other countries Ghana and South Africa
+Ghana <- subset(Afrodata, COUNTRY == 11)
+
+#Extract Education data
+Ghana.Edu <- Ghana$Q97
+#convert to factor
+Ghana.Edu.f <- as_factor(Ghana.Edu)
+
+#Extract party information
+Ghana.Party <- Ghana$Q63B
+#Convert to factor
+Ghana.Party.f <- as_factor(Ghana.Party)
+
+
+@
+
+
+<<echo=FALSE, include=FALSE>>==
+#elimination and organization of unwanted and wanted levels
+#Uganda levels, remove unwanted education levels
+#drop levels
+Uganda.Edu.f <-droplevels(Uganda.Edu.f, exclude = c("Missing", "Refused", "Don't know"))
+
+levels(Uganda.Edu.f) <- list("Uneducated" = "No formal schooling",
+                             "Less educated" = c("Informal schooling only", "Some primary schooling",
+                                                 "Primary school completed", "Some high school / high school"), "More educated" = c("Secondary school / high school completed", "Post-secondary qualifications, other than university", "Some university", "University completed", "Post-graduate"))
+
+#parties for Uganda
+Uganda.Party.f <- droplevels(Uganda.Party.f, exclude = c("Missing", "Neither of them", "Don't know / Haven't heard enough", "Refused", "Not Asked in this Country"))
+
+#renaming party levels
+levels(Uganda.Party.f) <- list("Ruling" = "Ruling party", 
+                              "Opposition" = "Opposition party or parties")
+
+
+#Ghana
+#Ghana Education 
+Ghana.Edu.f <-droplevels(Ghana.Edu.f, exclude = c("Missing", "Refused", "Don't know"))
+
+#rename the levels
+levels(Ghana.Edu.f) <- list("Uneducated" = "No formal schooling",
+                             "Less educated" = c("Informal schooling only", "Some primary schooling",
+                                                 "Primary school completed", "Some high school / high school"), "More educated" = c("Secondary school / high school completed", "Post-secondary qualifications, other than university", "Some university", "University completed", "Post-graduate"))
+
+
+#Ghana Parties
+Ghana.Party.f <- droplevels(Ghana.Party.f, exclude = c("Missing", "Neither of them", "Don't know / Haven't heard enough", "Refused", "Not Asked in this Country"))
+
+#rename party levels
+levels(Ghana.Party.f) <- list("Ruling" = "Ruling party", 
+                              "Opposition" = "Opposition party or parties")
+
+
+@
+
+<<echo=FALSE, include=FALSE>>==
+#Create a data frame
+Africa <- list(Uganda.Edu.f, Uganda.Party.f, Ghana.Edu.f, Ghana.Party.f)
+
+Africa <- as.data.frame(Africa)
+
+#change column names
+colnames(Africa) <-  c("Uganda_Educated", "Uganda_Parties", "Ghana_Educated", "Ghana_Parties")
+
+#Deal with NAs
+AfroClean <- Africa %>% drop_na() #use with tidyr package
+
+anyNA(AfroClean)
+
+@
+
+<<echo=FALSE>>== 
+
+#Uganda
+ggplot(AfroClean, aes(Uganda_Parties, fill = Uganda_Educated)) +
+  geom_bar(position = "dodge") +
+    labs(title = "Perception of educated people on political parties Uganda", 
+         xlab = "Uganda Parties")
+
+
+#Ghana
+ggplot(AfroClean, aes(Ghana_Parties, fill = Ghana_Educated)) +
+  geom_bar(position = "dodge") +
+  labs(title = "Perception of educated people on political parties in Ghana")
+
+#calculate standard error of the mean Uganda
+std.error(Uganda.Party)
+
+#calculate the standard error of the mean Ghana
+std.error(Ghana.Party)
+@
+
+
+\end{document}
